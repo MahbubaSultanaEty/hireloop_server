@@ -5,7 +5,10 @@ const port = 5000
 const { MongoClient, ServerApiVersion } = require('mongodb');
 require('dotenv').config()
 
-app.use(cors())
+app.use(cors({
+  origin: "http://localhost:3000",
+  credentials: true,
+}));
 app.use(express.json())
 
 app.get('/', (req, res) => {
@@ -29,7 +32,8 @@ async function run() {
       await client.connect();
       
     const database = client.db("hire_loop_db");
-      const jobsCollection = database.collection("jobs");
+    const jobsCollection = database.collection("jobs");
+    const compnayCollection= database.collection("company")
       
     app.get('/api/jobs', async (req, res) => {
       const query = {};
@@ -49,6 +53,13 @@ async function run() {
           const result = await jobsCollection.insertOne(job);
           res.send(result);
       })
+    
+    // company related api
+    app.post('/api/companies', async (req, res) => {
+      const company = req.body;
+      const result = await compnayCollection.insertOne(company);
+      res.send(result)
+    })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
