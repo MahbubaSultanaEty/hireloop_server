@@ -55,6 +55,16 @@ async function run() {
       })
     
     // company related api
+    app.get('/api/my/companies', async (req, res) => {
+      const query = {};
+      if (req.query.recruiterId) {
+        query.recruiterId = req.query.recruiterId;
+      }
+      const result = await compnayCollection.findOne(query);
+      res.send(result);
+})
+
+
     app.post('/api/companies', async (req, res) => {
       const company = req.body;
       const result = await compnayCollection.insertOne(company);
