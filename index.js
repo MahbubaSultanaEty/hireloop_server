@@ -36,6 +36,14 @@ async function run() {
     const database = client.db("hire_loop_db");
     const jobsCollection = database.collection("jobs");
     const compnayCollection = database.collection("company");
+    const userCollection = database.collection('user')
+
+    app.get('/api/users', async (req, res) => {
+      const cursor = userCollection.find().skip(6);
+      const result = await cursor.toArray();
+      res.send(result)
+    })
+
 
     app.get("/api/jobs", async (req, res) => {
       const query = {};
@@ -52,11 +60,21 @@ async function run() {
 
     app.post("/api/jobs", async (req, res) => {
       const job = req.body;
-      const result = await jobsCollection.insertOne(job);
+      const newJob = {
+        ...job,
+        createdAt: new Date()
+      }
+      const result = await jobsCollection.insertOne(newJob);
       res.send(result);
     });
 
     // company related api
+    app.get('/api/companies', async (req, res) => {
+      const cursor = compnayCollection.find().skip(3);
+      const result = await cursor.toArray();
+      res.send(result)
+    })
+
     app.get("/api/my/companies", async (req, res) => {
       const query = {};
       if (req.query.recruiterId) {
@@ -88,7 +106,11 @@ app.patch('/api/my/companies/:id', async (req, res) => {
 
     app.post("/api/companies", async (req, res) => {
       const company = req.body;
-      const result = await compnayCollection.insertOne(company);
+      const newCompany = {
+        ...company,
+        createdAt: new Date()
+      }
+      const result = await compnayCollection.insertOne(newCompany);
       res.send(result);
     });
 
