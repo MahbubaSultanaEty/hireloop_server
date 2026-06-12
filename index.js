@@ -37,6 +37,7 @@ async function run() {
     const jobsCollection = database.collection("jobs");
     const compnayCollection = database.collection("company");
     const userCollection = database.collection('user')
+    const applicationsCollection = database.collection('applications')
 
     app.get('/api/users', async (req, res) => {
       const cursor = userCollection.find().skip(6);
@@ -76,6 +77,15 @@ async function run() {
       const result = await jobsCollection.insertOne(newJob);
       res.send(result);
     });
+
+
+    // application related apis
+    app.post('/api/applications', async (req, res) => {
+      const application = req.body;
+      const result = await applicationsCollection.insertOne(application);
+      res.send(result)
+    })
+
 
     // company related api
     app.get('/api/companies', async (req, res) => {
