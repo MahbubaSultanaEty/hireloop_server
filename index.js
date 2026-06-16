@@ -38,6 +38,7 @@ async function run() {
     const compnayCollection = database.collection("company");
     const userCollection = database.collection('user')
     const applicationsCollection = database.collection('applications')
+    const plansCollection= database.collection('plans')
 
     app.get('/api/users', async (req, res) => {
       const cursor = userCollection.find().skip(6);
@@ -145,6 +146,16 @@ app.patch('/api/my/companies/:id', async (req, res) => {
       const result = await compnayCollection.insertOne(newCompany);
       res.send(result);
     });
+
+
+    app.get('/api/plans', async (req, res) => {
+      const query = {}
+      if (req.query.plan_id) {
+        query.id= req.query.plan_id
+      }
+      const plan = await plansCollection.findOne(query);
+      res.send(plan)
+    })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
