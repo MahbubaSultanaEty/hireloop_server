@@ -38,7 +38,8 @@ async function run() {
     const compnayCollection = database.collection("company");
     const userCollection = database.collection('user')
     const applicationsCollection = database.collection('applications')
-    const plansCollection= database.collection('plans')
+    const plansCollection = database.collection('plans');
+    const subscriptionsCollection= database.collection('subscriptions')
 
     app.get('/api/users', async (req, res) => {
       const cursor = userCollection.find().skip(6);
@@ -116,7 +117,6 @@ async function run() {
       const result = await compnayCollection.find(query).toArray();
       res.send(result);
     });
-
     // get api for single company
     app.get('/api/companies/:id', async (req, res) => {
   const { ObjectId } = require('mongodb');
@@ -124,8 +124,6 @@ async function run() {
   const result = await compnayCollection.findOne({ _id: new ObjectId(id) });
   res.send(result);
 });
-
-
     // PATCH update company by id
 app.patch('/api/my/companies/:id', async (req, res) => {
   const { id } = req.params;
@@ -147,7 +145,7 @@ app.patch('/api/my/companies/:id', async (req, res) => {
       res.send(result);
     });
 
-
+    // plan related Api's
     app.get('/api/plans', async (req, res) => {
       const query = {}
       if (req.query.plan_id) {
@@ -155,6 +153,25 @@ app.patch('/api/my/companies/:id', async (req, res) => {
       }
       const plan = await plansCollection.findOne(query);
       res.send(plan)
+    })
+
+    // subscription related api's
+    app.post('/api/subscriptions', async (req, res) => {
+      const data = req.body;
+      const subsInfo = {
+        ...data,
+        createdAt: new Date()
+      }
+      const result = await subscriptionsCollection.insertOne(subsInfo);
+      
+      const filter = { email: data.email };
+      const updateDocument = {
+        $set: {
+          plan: data.planId
+        },
+      };
+      const updatedResult = await userCollection.updateOne(filter, updateDocument);
+      res.send(updatedResult);
     })
 
     // Send a ping to confirm a successful connection
