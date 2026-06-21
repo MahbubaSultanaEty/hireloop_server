@@ -84,7 +84,16 @@ async function run() {
       if (req.user?.role !== 'recruiter') {
         return res.status(403).send({message: 'forbidden access'})
       }
+      next()
     }
+
+    const verifyAdmin = async (req, res, next) => {
+  if (req.user?.role !== "admin") {
+    return res.status(403).send({ message: "forbidden access" });
+  }
+  next();
+    };
+    
 
     app.get('/api/users', async (req, res) => {
       const cursor = userCollection.find().skip(6);
@@ -175,7 +184,7 @@ async function run() {
   res.send(result);
 });
     // PATCH update company by id
-app.patch('/api/my/companies/:id',logger, verifyToken, async (req, res) => {
+app.patch('/api/my/companies/:id',logger, verifyToken,verifyRecruiter, async (req, res) => {
   const { id } = req.params;
   const updatedData = req.body;
   const result = await compnayCollection.updateOne(
@@ -184,8 +193,28 @@ app.patch('/api/my/companies/:id',logger, verifyToken, async (req, res) => {
   );
   res.send(result);
 });
+  
+    // patch company status
+   app.patch(
+  "/api/companies/:id/status",
+  verifyToken,
+  verifyAdmin,
+  async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
 
-    app.post("/api/companies", async (req, res) => {
+    const result = await compnayCollection.updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $set: { status },
+      }
+    );
+
+    res.send(result);
+  }
+);
+
+    app.post("/api/companies",verifyToken, verifyRecruiter, async (req, res) => {
       const company = req.body;
       const newCompany = {
         ...company,
