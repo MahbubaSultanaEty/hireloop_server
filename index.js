@@ -22,19 +22,6 @@ const logger = (req, res, next) => {
   next();
 }
 
-const verifyToken = (req, res, next)=>{
-  console.log("headers", req.headers);
-  const authHeader = req.headers?.authorization;
-
-  if (!authHeader) {
-    return res.status(401).send({message: "unauthorized access"})
-  }
-  const token = authHeader.split(" ")[1]
-  if (!token) {
-     return res.status(401).send({message: "unauthorized access"})
-  }
-  next()
-}
 
 const uri = process.env.MONGO_URI;
 
@@ -59,6 +46,39 @@ async function run() {
     const applicationsCollection = database.collection('applications')
     const plansCollection = database.collection('plans');
     const subscriptionsCollection= database.collection('subscriptions')
+    const sessionCollection= database.collection('session')
+
+    // verification related 
+    const verifyToken = async(req, res, next)=>{
+  const authHeader = req.headers?.authorization;
+
+  if (!authHeader) {
+    return res.status(401).send({message: "unauthorized access"})
+  }
+  const token = authHeader.split(" ")[1]
+  if (!token) {
+    return res.status(401).send({ message: "unauthorized access" }) 
+      }
+
+      const query = { token: token };
+      const session = await sessionCollection.findOne(query);
+      console.log(session);
+      const userId = session.userId;
+      
+      const userQuery = {
+        _id: userId
+      }
+      const user = await userCollection.findOne(userQuery)
+      req.user = user;
+  next()
+    }
+    
+    const verifySeeker = async (req, res, next) => {
+      if (req.user?.role !== "seeker") {
+        return res.status(403).send({message: "forbidden access"})
+      }
+      next()
+    }
 
     app.get('/api/users', async (req, res) => {
       const cursor = userCollection.find().skip(6);
@@ -101,10 +121,12 @@ async function run() {
 
 
     // application related apis
-    app.get('/api/applications', async (req, res) => {
+    app.get('/api/applications',verifyToken,verifySeeker, async (req, res) => {
       const query = {};
       if (req.query.applicantId) {
-        query.applicantId= req.query.applicantId
+        query.applicantId = req.query.applicantId;
+        // check whther asking for this user or someone else
+        console.log(req.user, req.query.applicantId);
       }
       if (req.query.jobId) {
         query.jobId = req.query.jobId;
