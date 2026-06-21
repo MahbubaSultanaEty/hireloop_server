@@ -80,6 +80,12 @@ async function run() {
       next()
     }
 
+    const verifyRecruiter = async (req, res, next) => {
+      if (req.user?.role !== 'recruiter') {
+        return res.status(403).send({message: 'forbidden access'})
+      }
+    }
+
     app.get('/api/users', async (req, res) => {
       const cursor = userCollection.find().skip(6);
       const result = await cursor.toArray();
@@ -127,6 +133,9 @@ async function run() {
         query.applicantId = req.query.applicantId;
         // check whther asking for this user or someone else
         console.log(req.user, req.query.applicantId);
+        if (req.user._id.toString() !== req.query.applicantId) {
+          return res.status(403).send({message: "forbidden access"})
+        }
       }
       if (req.query.jobId) {
         query.jobId = req.query.jobId;
