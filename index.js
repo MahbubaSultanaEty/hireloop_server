@@ -17,6 +17,25 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
+const logger = (req, res, next) => {
+  console.log("Logger middleware LOGGed", req.params);
+  next();
+}
+
+const verifyToken = (req, res, next)=>{
+  console.log("headers", req.headers);
+  const authHeader = req.headers?.authorization;
+
+  if (!authHeader) {
+    return res.status(401).send({message: "unauthorized access"})
+  }
+  const token = authHeader.split(" ")[1]
+  if (!token) {
+     return res.status(401).send({message: "unauthorized access"})
+  }
+  next()
+}
+
 const uri = process.env.MONGO_URI;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -103,7 +122,7 @@ async function run() {
 
 
     // company related api
-    app.get('/api/companies', async (req, res) => {
+    app.get('/api/companies', verifyToken, async (req, res) => {
       const cursor = compnayCollection.find().skip(3);
       const result = await cursor.toArray();
       res.send(result)
@@ -125,7 +144,7 @@ async function run() {
   res.send(result);
 });
     // PATCH update company by id
-app.patch('/api/my/companies/:id', async (req, res) => {
+app.patch('/api/my/companies/:id',logger, verifyToken, async (req, res) => {
   const { id } = req.params;
   const updatedData = req.body;
   const result = await compnayCollection.updateOne(
