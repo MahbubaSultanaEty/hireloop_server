@@ -7,7 +7,7 @@ require("dotenv").config();
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: process.env.BASE_URL,
     credentials: true,
   }),
 );
@@ -33,10 +33,14 @@ const client = new MongoClient(uri, {
   },
 });
 
-async function run() {
-  try {
-    // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+// async function run() {
+//   try {
+//     // Connect the client to the server	(optional starting in v4.7)
+//     await client.connect();
+
+client.connect(() => {
+  console.log("connecting to mongo db");
+}).catch(console.dir)
 
     const database = client.db("hire_loop_db");
     const jobsCollection = database.collection("jobs");
@@ -47,6 +51,7 @@ async function run() {
     const subscriptionsCollection = database.collection("subscriptions");
     const sessionCollection = database.collection("session");
 
+    
     // verification related
     const verifyToken = async (req, res, next) => {
       const authHeader = req.headers?.authorization;
@@ -152,8 +157,20 @@ app.get("/api/jobs", async (req, res) => {
     });
   }
 
+  // pagination related work
+  if (req.query.page) {
+    const page = Number(req.query.page) || 1;
+  const perPage = Number(req.query.perPage) || 9;
+    const skipItems = (page - 1) * perPage;
+
+    const total= await jobsCollection.countDocuments(query)
+    const cursor = jobsCollection.find(query).skip(skipItems).limit(perPage);
+    const jobs = await cursor.toArray();
+    return res.send({total, jobs})
+  }
   res.send(jobs);
 });
+    
 
     app.get("/api/jobs/:id", async (req, res) => {
       const id = req.params.id;
@@ -311,17 +328,19 @@ app.get("/api/jobs", async (req, res) => {
     });
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!",
-    );
-  } finally {
-    // Ensures that the client will close when you finish/error
-    // await client.close();
-  }
-}
-run().catch(console.dir);
+    // await client.db("admin").command({ ping: 1 });
+//     console.log(
+//       "Pinged your deployment. You successfully connected to MongoDB!",
+//     );
+//   } finally {
+//     // Ensures that the client will close when you finish/error
+//     // await client.close();
+//   }
+// }
+// run().catch(console.dir);
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
+
+module.exports = app;
